@@ -68,6 +68,20 @@ export function AuthProvider({ children }) {
     toast.success('OTP sent');
   }, []);
 
+  const setSession = useCallback(
+    (nextUser, nextToken = 'mock-access-token') => {
+      if (nextToken) {
+        localStorage.setItem(TOKEN_KEY, nextToken);
+        setToken(nextToken);
+      } else {
+        localStorage.removeItem(TOKEN_KEY);
+        setToken(null);
+      }
+      persistUser(nextUser || null);
+    },
+    [persistUser]
+  );
+
   const verifyOTP = useCallback(
     async (mobile, otp) => {
       const authResponse = await authAPI.verifyOTP(mobile, otp);
@@ -126,6 +140,7 @@ export function AuthProvider({ children }) {
       user,
       loading,
       isAuthenticated: Boolean(token),
+      setSession,
       sendOTP,
       verifyOTP,
       refreshUser,
@@ -133,7 +148,7 @@ export function AuthProvider({ children }) {
       becomeSeller,
       logout,
     }),
-    [becomeSeller, loading, logout, refreshUser, sendOTP, token, updateUser, user, verifyOTP]
+    [becomeSeller, loading, logout, refreshUser, sendOTP, setSession, token, updateUser, user, verifyOTP]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -35,9 +35,9 @@ apiClient.interceptors.response.use(
     if (status === 401) {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
-      if (window.location.pathname !== '/login') {
+      if (window.location.pathname !== '/auth') {
         toast.error('Session expired. Please login again.');
-        window.location.assign('/login');
+        window.location.assign('/auth');
       }
     } else if (status === 403) {
       toast.error(message || 'You do not have permission for this action.');

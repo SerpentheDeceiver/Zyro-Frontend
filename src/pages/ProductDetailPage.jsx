@@ -1,118 +1,179 @@
-import { useState } from 'react';
-import { MessageCircle, ShieldCheck, ShoppingBag } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { chatAPI, ordersAPI } from '../api';
-import Button from '../components/common/Button.jsx';
-import Loader from '../components/common/Loader.jsx';
-import StatusBadge from '../components/common/StatusBadge.jsx';
+import { ShieldCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { getProductById } from '../api/mock';
+import { ordersAPI } from '../api';
+import { Avatar, Badge, Button, Modal, SkeletonLoader } from '../components/common';
+import EmptyState from '../components/common/EmptyState.jsx';
+import ErrorCard from '../components/common/ErrorCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useProduct } from '../hooks/useProducts';
-import { formatCurrency, productImage } from '../utils/format';
+
+function formatINR(amount) {
+  return `₹${Number(amount || 0).toLocaleString('en-IN')}`;
+}
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const { product, loading } = useProduct(id);
-  const { isAuthenticated, user } = useAuth();
-  const [buying, setBuying] = useState(false);
-  const [chatting, setChatting] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [product, setProduct] = useState(null);
+  const [selectedImage, setSelectedImage] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  if (loading) return <Loader label="Loading product" />;
+  async function loadProduct() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getProductById(id);
+      setProduct(data || null);
+      if (data) {
+        const firstImage = data.imageUrl || data.primaryImageUrl || data.imageUrls?.[0] || '';
+        setSelectedImage(firstImage);
+      }
+    } catch {
+      setError('Failed to load product. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  if (!product) {
+  useEffect(() => {
+    loadProduct();
+  }, [id]);
+
+  const images = useMemo(() => {
+    if (!product) return [];
+    const merged = [
+      product.imageUrl,
+      product.primaryImageUrl,
+      ...(Array.isArray(product.imageUrls) ? product.imageUrls : []),
+    ].filter(Boolean);
+    return [...new Set(merged)];
+  }, [product]);
+
+  if (loading) {
     return (
-      <main className="page-shell py-10">
-        <div className="panel p-8 text-center">
-          <h1 className="text-2xl font-black">Product not found</h1>
-          <Link to="/" className="btn-primary mt-5">
-            Back to marketplace
-          </Link>
+      <section className="space-y-5 animate-fade-slide-up">
+        <SkeletonLoader variant="text" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <SkeletonLoader variant="card" />
+          <div className="space-y-4">
+            <SkeletonLoader variant="text" />
+            <SkeletonLoader variant="list-item" />
+            <SkeletonLoader variant="list-item" />
+          </div>
         </div>
-      </main>
+      </section>
     );
   }
 
-  const images = product.imageUrls?.length ? product.imageUrls : [productImage(product)];
-  const isOwnListing = user?.id && user.id === product.sellerId;
-
-  function requireLogin() {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: { pathname: `/products/${id}` } } });
-      return false;
-    }
-    return true;
+  if (error) {
+    return <ErrorCard message={error} onRetry={loadProduct} />;
   }
 
-  async function handleChat() {
-    if (!requireLogin()) return;
-    setChatting(true);
-    try {
-      const chat = await chatAPI.createChat(product.id);
-      navigate(`/chat/${chat.id}`);
-    } finally {
-      setChatting(false);
-    }
+  if (!product) {
+    return (
+      <EmptyState
+        title="Product not found"
+        subtitle="This listing may have been removed or is no longer available."
+        actionLabel="Back to Home"
+        onAction={() => navigate('/home')}
+      />
+    );
   }
 
-  async function handleBuy() {
-    if (!requireLogin()) return;
-    if (isOwnListing) {
-      toast.error('You cannot buy your own listing.');
-      return;
-    }
+  const description = product.description || 'No description provided.';
+  const longDescription = description.length > 220;
+  const shownDescription = expanded || !longDescription ? description : `${description.slice(0, 220)}...`;
+  const location = [product.city || product.locationCity, product.state || product.locationState]
+    .filter(Boolean)
+    .join(', ');
+  const balance = Number(user?.walletBalance || 0);
 
-    setBuying(true);
+  async function handleConfirmPurchase() {
+    setConfirming(true);
     try {
-      const order = await ordersAPI.createOrder(product);
+      await ordersAPI.createOrder({
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        sellerId: product.sellerId || `seller-${product.id}`,
+        sellerName: product.sellerName || 'Seller',
+      });
       toast.success('Order created. Funds are held in escrow.');
-      navigate('/orders', { state: { orderId: order.id } });
+      setShowConfirmModal(false);
+      navigate('/orders');
     } finally {
-      setBuying(false);
+      setConfirming(false);
     }
   }
 
   return (
-    <main className="page-shell py-8">
-      <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
-        <section>
-          <div className="overflow-hidden rounded-lg bg-slate-100 shadow-soft">
-            <img src={productImage(product)} alt={product.title} className="aspect-[4/3] w-full object-cover" />
+    <section className="space-y-5 animate-fade-slide-up">
+      <nav className="text-sm text-slate-500">
+        <Link to="/home" className="hover:text-primary">
+          Home
+        </Link>
+        <span className="px-2 text-slate-300">{'>'}</span>
+        <span>{product.category || 'Other'}</span>
+        <span className="px-2 text-slate-300">{'>'}</span>
+        <span className="font-medium text-slate-700">{product.title}</span>
+      </nav>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-4">
+          <div className="group overflow-hidden rounded-2xl bg-slate-100">
+            <img
+              src={selectedImage || images[0]}
+              alt={product.title}
+              className="aspect-[4/3] w-full cursor-zoom-in object-cover transition duration-300 group-hover:scale-110"
+            />
           </div>
-          {images.length > 1 && (
-            <div className="mt-4 grid grid-cols-4 gap-3">
-              {images.slice(0, 4).map((image) => (
-                <img key={image} src={image} alt="" className="aspect-square rounded-lg object-cover" />
+
+          {images.length > 1 ? (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {images.map((image) => (
+                <button
+                  key={image}
+                  type="button"
+                  onClick={() => setSelectedImage(image)}
+                  className={[
+                    'overflow-hidden rounded-xl border-2 bg-slate-100 transition',
+                    selectedImage === image ? 'border-primary' : 'border-transparent hover:border-slate-300',
+                  ].join(' ')}
+                >
+                  <img src={image} alt="" className="h-16 w-24 object-cover" />
+                </button>
               ))}
             </div>
-          )}
-        </section>
+          ) : null}
+        </div>
 
-        <section className="space-y-5">
-          <div>
-            <StatusBadge status={product.status || 'ACTIVE'} />
-            <h1 className="mt-4 text-3xl font-black text-slate-950 md:text-4xl">{product.title}</h1>
-            <p className="mt-3 text-4xl font-black text-primary">{formatCurrency(product.price)}</p>
-          </div>
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
+          <h1 className="text-[28px] font-black leading-tight text-ink">{product.title}</h1>
+          <h2 className="text-[32px] font-black leading-none text-primary">{formatINR(product.price)}</h2>
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="panel p-4">
-              <p className="text-slate-500">Condition</p>
-              <p className="mt-1 font-bold text-slate-950">{product.condition?.replace('_', ' ') || 'GOOD'}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <p className="text-xs text-slate-500">Condition</p>
+              <p className="mt-1 font-semibold text-ink">{(product.condition || 'GOOD').replaceAll('_', ' ')}</p>
             </div>
-            <div className="panel p-4">
-              <p className="text-slate-500">Location</p>
-              <p className="mt-1 font-bold text-slate-950">
-                {[product.locationCity, product.locationState].filter(Boolean).join(', ') || 'Remote'}
-              </p>
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <p className="text-xs text-slate-500">Location</p>
+              <p className="mt-1 font-semibold text-ink">{location || 'Remote'}</p>
             </div>
           </div>
 
-          <div className="panel p-5">
+          <div className="rounded-xl bg-primary/10 p-4">
             <div className="flex items-start gap-3">
-              <ShieldCheck className="mt-1 text-primary" size={22} />
+              <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
               <div>
-                <h2 className="font-black text-slate-950">Buy with Escrow</h2>
+                <p className="font-bold text-ink">Buy with Escrow</p>
                 <p className="mt-1 text-sm text-slate-600">
                   Zyro locks funds when the order is placed and releases them after delivery confirmation.
                 </p>
@@ -120,28 +181,68 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button className="flex-1" loading={buying} onClick={handleBuy}>
-              <ShoppingBag size={18} />
+          <div className="space-y-2">
+            <Button fullWidth onClick={() => setShowConfirmModal(true)}>
               Buy with Escrow
             </Button>
-            <Button className="flex-1" variant="outline" loading={chatting} onClick={handleChat}>
-              <MessageCircle size={18} />
+            <Button variant="secondary" fullWidth onClick={() => navigate('/chats')}>
               Chat with Seller
             </Button>
           </div>
 
-          <div className="panel p-5">
-            <h2 className="font-black text-slate-950">Seller</h2>
-            <p className="mt-2 text-slate-700">{product.sellerName || 'Zyro seller'}</p>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs text-slate-500">Seller</p>
+            <div className="mt-2 flex items-center gap-3">
+              <Avatar name={product.sellerName || 'Seller'} size="md" />
+              <div>
+                <p className="font-semibold text-ink">{product.sellerName || 'Seller'}</p>
+                {product.sellerVerified ? <Badge variant="verified">Verified</Badge> : null}
+              </div>
+            </div>
           </div>
 
-          <div className="panel p-5">
-            <h2 className="font-black text-slate-950">Description</h2>
-            <p className="mt-3 whitespace-pre-line text-slate-600">{product.description || 'No description added.'}</p>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="font-semibold text-ink">Description</p>
+            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">{shownDescription}</p>
+            {longDescription ? (
+              <button
+                type="button"
+                onClick={() => setExpanded((prev) => !prev)}
+                className="mt-2 text-sm font-semibold text-primary hover:text-primary-dark"
+              >
+                {expanded ? 'Show less' : 'Show more'}
+              </button>
+            ) : null}
           </div>
-        </section>
+        </aside>
       </div>
-    </main>
+
+      <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} title="Confirm Purchase" maxWidth="md">
+        <div className="space-y-4">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-sm font-semibold text-ink">{product.title}</p>
+            <p className="mt-1 text-xl font-black text-primary">{formatINR(product.price)}</p>
+          </div>
+
+          <p className="text-sm text-slate-600">
+            Your wallet will be debited {formatINR(product.price)}. Funds are held in escrow until you confirm delivery.
+          </p>
+
+          <div className="rounded-lg bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+            Current wallet balance: {formatINR(balance)}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="ghost" onClick={() => setShowConfirmModal(false)} disabled={confirming}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmPurchase} loading={confirming}>
+              Confirm Purchase
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </section>
   );
 }
+
