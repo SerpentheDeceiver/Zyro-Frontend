@@ -169,7 +169,10 @@ export default function AuthPage() {
       <section className="relative hidden overflow-hidden bg-ink p-10 text-white lg:col-span-3 lg:flex lg:flex-col lg:justify-between">
         <div className="animate-fade-slide-up">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-200">Escrow Marketplace</p>
-          <h1 className="mt-6 text-6xl font-black leading-none">Zyro</h1>
+          <div className="mt-6 flex items-center gap-4">
+            <img src="/src/assets/logo/logo.svg" alt="Zyro Logo" className="h-12 md:h-16 w-auto object-contain brightness-0 invert" />
+            <h1 className="text-5xl md:text-6xl font-black leading-none">Zyro</h1>
+          </div>
           <p className="mt-6 max-w-xl text-2xl font-semibold leading-tight text-slate-100">
             Buy and sell with money held until delivery
           </p>

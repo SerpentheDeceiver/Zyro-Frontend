@@ -4,7 +4,7 @@ export default function PageLoader() {
       {/* Logo with animated ring */}
       <div className="relative mb-8">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/5">
-          <span className="text-4xl font-black text-primary">Z</span>
+          <img src="/src/assets/logo/logo.svg" alt="Zyro Logo" className="h-12 w-auto object-contain brightness-0" />
         </div>
         {/* Animated loading ring */}
         <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary border-r-primary animate-spin" />

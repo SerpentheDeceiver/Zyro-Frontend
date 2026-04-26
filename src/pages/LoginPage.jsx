@@ -43,9 +43,10 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-screen bg-slate-50 lg:grid-cols-[1fr_0.85fr]">
       <section className="hidden bg-primary p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold">
+        <Link to="/" className="inline-flex items-center gap-3 text-sm font-semibold">
           <ArrowLeft size={18} />
-          Zyro
+          <img src="/src/assets/logo/logo.svg" alt="Zyro Logo" className="h-8 w-auto object-contain brightness-0 invert" />
+          <span className="text-xl font-semibold">Zyro</span>
         </Link>
         <div>
           <h1 className="max-w-xl text-5xl font-black leading-tight">Trade peer-to-peer with escrow built in.</h1>

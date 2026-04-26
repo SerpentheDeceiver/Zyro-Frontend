@@ -78,8 +78,9 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 h-16 border-b border-gray-100 bg-white">
       <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-[160px] items-center">
-          <Link to="/home" className="font-['Plus_Jakarta_Sans'] text-[22px] font-extrabold tracking-tight text-primary">
-            Zyro
+          <Link to="/home" className="flex items-center gap-2 font-['Plus_Jakarta_Sans'] text-primary">
+            <img src="/src/assets/logo/logo.svg" alt="Zyro Logo" className="h-10 md:h-12 w-auto object-contain brightness-0" />
+            <span className="text-xl font-semibold text-gray-800">Zyro</span>
           </Link>
         </div>
 
