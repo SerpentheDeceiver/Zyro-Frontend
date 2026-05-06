@@ -4,13 +4,15 @@ import { ordersAPI } from './orders.api';
 export const walletAPI = {
   getBalance: async () => {
     const profile = unwrap(await apiClient.get('/users/me'));
+    const walletBalance = profile?.wallet_balance ?? profile?.walletBalance ?? 0;
     return {
-      balance: profile?.walletBalance ?? 0,
-      walletBalance: profile?.walletBalance ?? 0,
+      balance: walletBalance,
+      walletBalance,
       profile,
     };
   },
   getLedger: ordersAPI.getWalletHistory,
-  addFunds: async (amount) =>
+  topUp: async (amount) =>
     unwrap(await apiClient.post('/users/wallet/topup', null, { params: { amount } })),
+  addFunds: async (amount) => walletAPI.topUp(amount),
 };

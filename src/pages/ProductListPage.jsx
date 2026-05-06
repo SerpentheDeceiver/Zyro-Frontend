@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
-import { getProducts } from '../api/mock/index.js';
+import { productsAPI } from '../api';
 import ProductCard from '../components/product/ProductCard.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import ErrorCard from '../components/common/ErrorCard.jsx';
 import SkeletonLoader from '../components/common/SkeletonLoader.jsx';
+import { normalizePage } from '../utils/format';
 
 const CATEGORIES = ['All', 'Electronics', 'Fashion', 'Home', 'Books', 'Sports', 'Collectibles', 'Other'];
 
@@ -15,29 +17,46 @@ const SORT_OPTIONS = [
 ];
 
 export default function ProductListPage() {
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState('All');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => searchParams.get('q') || '');
+  const [state, setState] = useState(() => searchParams.get('state') || '');
   const [sort, setSort] = useState('newest');
 
-  async function loadProducts() {
+  useEffect(() => {
+    const q = searchParams.get('q') || '';
+    const nextState = searchParams.get('state') || '';
+    const nextCategory = searchParams.get('category') || 'All';
+    setSearch(q);
+    setState(nextState);
+    setActiveCategory(nextCategory);
+  }, [searchParams]);
+
+  const loadProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getProducts();
-      setProducts(Array.isArray(data) ? data : []);
+      const data = await productsAPI.getProducts({
+        page: 0,
+        size: 60,
+        search: search.trim() || undefined,
+        state: state && state !== 'All India' ? state : undefined,
+        category: activeCategory !== 'All' ? activeCategory : undefined,
+      });
+      setProducts(normalizePage(data));
     } catch {
       setError('Failed to load listings. Please try again.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [activeCategory, search, state]);
 
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [loadProducts]);
 
   const filteredProducts = useMemo(() => {
     let result = products;
@@ -76,7 +95,9 @@ export default function ProductListPage() {
       <div className="space-y-8 pb-16 md:pb-8">
         {/* Page Header */}
         <div className="space-y-1">
-          <h1 className="text-3xl font-black text-ink">Browse Marketplace</h1>
+          <h1 className="text-3xl font-black text-ink">
+            {search.trim() ? `Results for "${search.trim()}"` : 'Browse Marketplace'}
+          </h1>
           <p className="text-sm text-slate-500">
             {loading
               ? 'Loading listings…'

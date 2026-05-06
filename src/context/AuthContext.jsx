@@ -85,7 +85,10 @@ export function AuthProvider({ children }) {
   const verifyOTP = useCallback(
     async (mobile, otp) => {
       const authResponse = await authAPI.verifyOTP(mobile, otp);
-      const nextToken = authResponse.token || 'mock-access-token';
+      const nextToken = authResponse.token || authResponse.accessToken || (USE_MOCK ? 'mock-access-token' : null);
+      if (!nextToken) {
+        throw new Error('OTP verified but no access token was returned.');
+      }
       localStorage.setItem(TOKEN_KEY, nextToken);
       setToken(nextToken);
 
@@ -95,7 +98,7 @@ export function AuthProvider({ children }) {
         return authResponse;
       }
 
-      persistUser(buildUserFromAuth(authResponse));
+      persistUser(authResponse.user || buildUserFromAuth(authResponse));
 
       try {
         await refreshUser();

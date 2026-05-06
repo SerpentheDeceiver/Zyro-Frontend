@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownLeft, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EmptyState from '../components/common/EmptyState.jsx';
@@ -6,18 +6,17 @@ import ErrorCard from '../components/common/ErrorCard.jsx';
 import SkeletonLoader from '../components/common/SkeletonLoader.jsx';
 import Modal from '../components/common/Modal.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { mockUser, getWalletHistory } from '../api/mock/index.js';
-import { formatCurrency, formatDate } from '../utils/format';
+import { walletAPI } from '../api';
+import { formatDate } from '../utils/format';
 
 export default function WalletPage() {
   const { user } = useAuth();
-  const [balance, setBalance] = useState(mockUser.walletBalance);
+  const [balance, setBalance] = useState(user?.walletBalance ?? user?.wallet_balance ?? 0);
   const [displayBalance, setDisplayBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const countUpRef = useRef(null);
 
   // Animate number count-up on load
   useEffect(() => {
@@ -33,23 +32,24 @@ export default function WalletPage() {
   }, [balance]);
 
   const [txError, setTxError] = useState(null);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
 
-  // Load transactions
-  async function loadTransactions() {
+  async function loadWallet() {
     setLoading(true);
     setTxError(null);
     try {
-      const history = await getWalletHistory();
+      const [balanceResponse, history] = await Promise.all([walletAPI.getBalance(), walletAPI.getLedger()]);
+      setBalance(balanceResponse.walletBalance ?? balanceResponse.balance ?? 0);
       setTransactions(history || []);
     } catch {
-      setTxError('Failed to load transactions. Please try again.');
+      setTxError('Failed to load wallet. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadTransactions();
+    loadWallet();
   }, []);
 
   // mock data uses a 'date' string (YYYY-MM-DD), not 'createdAt'
@@ -77,7 +77,7 @@ export default function WalletPage() {
     <main className="page-shell min-h-screen bg-slate-50 py-8 animate-fade-slide-up">
       <div className="mx-auto max-w-4xl space-y-8">
         {/* Hero Section */}
-        <section className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-12 text-white shadow-soft overflow-hidden relative">
+        <section className="rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 p-12 text-white shadow-soft overflow-hidden relative">
           {/* Animated background pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute h-40 w-40 rounded-full blur-3xl bg-white -top-20 -left-20 animate-pulse" />
@@ -96,7 +96,10 @@ export default function WalletPage() {
               >
                 Top Up
               </div>
-              <div className="cursor-pointer rounded-pill border-2 border-white px-8 py-3 font-bold text-white transition hover:bg-white/10">
+              <div
+                onClick={() => setShowWithdrawModal(true)}
+                className="cursor-pointer rounded-pill border-2 border-white px-8 py-3 font-bold text-white transition hover:bg-white/10"
+              >
                 Withdraw
               </div>
             </div>
@@ -148,7 +151,7 @@ export default function WalletPage() {
               ))}
             </div>
           ) : txError ? (
-            <ErrorCard message={txError} onRetry={loadTransactions} />
+            <ErrorCard message={txError} onRetry={loadWallet} />
           ) : monthTransactions.length > 0 ? (
             <div className="space-y-4">
               {Object.entries(groupedByDate).map(([dateKey, txns]) => (
@@ -210,13 +213,27 @@ export default function WalletPage() {
         </section>
       </div>
 
+      {/* Withdraw Coming Soon Modal */}
+      <Modal isOpen={showWithdrawModal} onClose={() => setShowWithdrawModal(false)} title="Withdraw Funds" maxWidth="sm">
+        <div className="space-y-4 text-center py-4">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
+            <Wallet className="h-8 w-8 text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-lg font-bold text-gray-900">Coming Soon</p>
+            <p className="mt-1 text-sm text-slate-500">Withdrawals will be available after KYC verification is complete.</p>
+          </div>
+        </div>
+      </Modal>
+
       {/* Top Up Modal */}
       <TopUpWalletModal
         isOpen={showTopUpModal}
         onClose={() => setShowTopUpModal(false)}
         onSuccess={(amount) => {
-          setBalance((prev) => prev + amount);
+          setBalance(amount);
           setShowTopUpModal(false);
+          loadWallet();
         }}
       />
     </main>
@@ -236,9 +253,9 @@ function TopUpWalletModal({ isOpen, onClose, onSuccess }) {
 
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const profile = await walletAPI.topUp(amount);
       toast.success(`₹${amount.toLocaleString('en-IN')} added to your wallet!`);
-      onSuccess(amount);
+      onSuccess(profile?.walletBalance ?? profile?.wallet_balance ?? amount);
       setSelectedAmount(null);
       setCustomAmount('');
     } finally {

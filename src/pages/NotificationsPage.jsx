@@ -56,7 +56,7 @@ const MOCK_NOTIFICATIONS = [
     body: 'Your order ZY-ORD-1042 is confirmed. We’ll notify you when it ships.',
     time: new Date(NOW - 2 * 60 * 1000).toISOString(),
     read: false,
-    actionUrl: '/orders/ord-001',
+    actionUrl: '/orders',
   },
   {
     id: 'n-002',
@@ -65,7 +65,7 @@ const MOCK_NOTIFICATIONS = [
     body: 'Payment is securely held. Confirm receipt once you receive the item.',
     time: new Date(NOW - 12 * 60 * 1000).toISOString(),
     read: false,
-    actionUrl: '/orders/ord-001',
+    actionUrl: '/orders',
   },
   {
     id: 'n-003',
@@ -92,7 +92,7 @@ const MOCK_NOTIFICATIONS = [
     body: 'Your order ZY-ORD-2178 status has changed. View the latest details.',
     time: new Date(NOW - 28 * 60 * 60 * 1000).toISOString(),
     read: true,
-    actionUrl: '/orders/ord-002',
+    actionUrl: '/orders',
   },
   {
     id: 'n-006',
@@ -101,7 +101,7 @@ const MOCK_NOTIFICATIONS = [
     body: 'Payment for ZY-ORD-2178 was released to the seller.',
     time: new Date(NOW - 50 * 60 * 60 * 1000).toISOString(),
     read: true,
-    actionUrl: '/orders/ord-002',
+    actionUrl: '/orders',
   },
   {
     id: 'n-007',
@@ -128,7 +128,7 @@ const MOCK_NOTIFICATIONS = [
     body: 'A dispute has been raised. Escrow is frozen while we review the issue.',
     time: new Date(NOW - 9 * 24 * 60 * 60 * 1000).toISOString(),
     read: true,
-    actionUrl: '/orders/ord-004',
+    actionUrl: '/orders',
   },
   {
     id: 'n-010',
@@ -137,7 +137,7 @@ const MOCK_NOTIFICATIONS = [
     body: 'Order ZY-ORD-3891 has been cancelled.',
     time: new Date(NOW - 12 * 24 * 60 * 60 * 1000).toISOString(),
     read: true,
-    actionUrl: '/orders/ord-003',
+    actionUrl: '/orders',
   },
 ];
 

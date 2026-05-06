@@ -24,9 +24,6 @@
   --shadow-card:  0 14px 40px rgba(15, 23, 42, 0.08);
 }
 
-/* ─────────────────────────────────────────────
-   Global Keyframes
-   ───────────────────────────────────────────── */
 @keyframes fadeSlideUp {
   from {
     opacity: 0;

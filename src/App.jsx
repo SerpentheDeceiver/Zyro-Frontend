@@ -9,8 +9,11 @@ import CreateListingPage from './pages/CreateListingPage.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+import NotificationsPage from './pages/NotificationsPage.jsx';
+import OrderDetailPage from './pages/OrderDetailPage.jsx';
 import OrdersPage from './pages/OrdersPage.jsx';
 import ProductDetailPage from './pages/ProductDetailPage.jsx';
+import ProductListPage from './pages/ProductListPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import WalletPage from './pages/WalletPage.jsx';
@@ -24,7 +27,30 @@ function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           <Route path="/home" element={<HomePage />} />
+
+          {/* Products */}
+          <Route path="/products" element={<ProductListPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
+
+          {/* Orders */}
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <OrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders/:id"
+            element={
+              <ProtectedRoute>
+                <OrderDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Chat */}
           <Route
             path="/chat"
             element={
@@ -41,6 +67,8 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+
+          {/* Wallet */}
           <Route
             path="/wallet"
             element={
@@ -49,14 +77,8 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/orders"
-            element={
-              <ProtectedRoute>
-                <OrdersPage />
-              </ProtectedRoute>
-            }
-          />
+
+          {/* Profile & Settings */}
           <Route
             path="/profile"
             element={
@@ -73,6 +95,18 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+
+          {/* Notifications */}
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Create listing */}
           <Route
             path="/sell"
             element={
@@ -83,7 +117,12 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+
+          {/* Legacy / convenience redirects */}
+          <Route path="/create-listing" element={<Navigate to="/sell" replace />} />
+          <Route path="/chats" element={<Navigate to="/chat" replace />} />
           <Route path="/account" element={<Navigate to="/profile" replace />} />
+
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

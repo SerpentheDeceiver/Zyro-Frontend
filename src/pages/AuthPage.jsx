@@ -3,41 +3,33 @@ import { ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Button } from '../components/common';
-import { mockUser } from '../api/mock';
 import { useAuth } from '../context/AuthContext';
 
 const COUNTRY_OPTIONS = [
-  { flag: '🇮🇳', code: '+91', label: 'India' },
-  { flag: '🇺🇸', code: '+1', label: 'United States' },
+  { flag: '🇮🇳', code: '+91',  label: 'India' },
+  { flag: '🇺🇸', code: '+1',   label: 'United States' },
+  { flag: '🇬🇧', code: '+44',  label: 'United Kingdom' },
   { flag: '🇦🇪', code: '+971', label: 'UAE' },
+  { flag: '🇸🇬', code: '+65',  label: 'Singapore' },
+  { flag: '🇦🇺', code: '+61',  label: 'Australia' },
+  { flag: '🇨🇦', code: '+1',   label: 'Canada' },
+  { flag: '🇩🇪', code: '+49',  label: 'Germany' },
 ];
 
 function GoogleIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-      <path
-        fill="#EA4335"
-        d="M12 10.2v4.12h5.74c-.25 1.33-1.77 3.9-5.74 3.9-3.45 0-6.27-2.86-6.27-6.39S8.55 5.44 12 5.44c1.97 0 3.29.84 4.05 1.56l2.76-2.66C17.03 2.66 14.72 1.8 12 1.8 6.58 1.8 2.2 6.28 2.2 11.83S6.58 21.86 12 21.86c6.93 0 9.64-4.94 9.64-7.5 0-.5-.05-.86-.12-1.24H12z"
-      />
-      <path
-        fill="#34A853"
-        d="M3.35 7.33l3.39 2.54c.92-2.1 2.89-3.57 5.26-3.57 1.97 0 3.29.84 4.05 1.56l2.76-2.66C17.03 3.52 14.72 2.66 12 2.66c-3.78 0-7.03 2.2-8.65 5.4z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M12 22.2c2.64 0 4.86-.87 6.49-2.37l-3.01-2.47c-.8.57-1.88.98-3.48.98-3.95 0-5.46-2.56-5.74-3.88l-3.36 2.6C4.5 20.1 8 22.2 12 22.2z"
-      />
-      <path
-        fill="#4285F4"
-        d="M21.64 14.36c0-.5-.05-.86-.12-1.24H12v4.12h5.74c-.2 1.05-1.2 2.58-3.27 3.29l3.01 2.47c1.74-1.64 2.76-4.05 2.76-7.64z"
-      />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-5 w-5" aria-hidden="true">
+      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
+      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
     </svg>
   );
 }
 
 export default function AuthPage() {
   const navigate = useNavigate();
-  const { sendOTP, setSession, isAuthenticated } = useAuth();
+  const { sendOTP, verifyOTP, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('otp');
   const [step, setStep] = useState(1);
   const [countryCode, setCountryCode] = useState('+91');
@@ -94,22 +86,7 @@ export default function AuthPage() {
 
     setVerifyingOtp(true);
     try {
-      const normalizedUser = {
-        id: mockUser.id,
-        mobile: mockUser.mobile,
-        fullName: mockUser.name,
-        name: mockUser.name,
-        email: mockUser.email,
-        avatarUrl: mockUser.avatarUrl,
-        role: mockUser.role,
-        isVerified: mockUser.isVerified,
-        walletBalance: mockUser.walletBalance,
-        createdAt: mockUser.joinedAt,
-        joinedAt: mockUser.joinedAt,
-      };
-
-      setSession(normalizedUser, 'mock-access-token');
-      toast.success('Welcome back, Ganesh! 👋');
+      await verifyOTP(fullMobile, otpValue);
       navigate('/home', { replace: true });
     } finally {
       setVerifyingOtp(false);
@@ -183,34 +160,28 @@ export default function AuthPage() {
           <div className="pointer-events-none absolute right-6 top-20 h-60 w-60 rounded-full bg-secondary/20 blur-3xl" />
 
           <div className="relative mx-auto max-w-3xl">
-            <div className="grid grid-cols-3 items-center gap-4">
-              <div className="animate-fade-slide-up rounded-2xl border border-indigo-200/25 bg-slate-800/75 p-4 shadow-soft">
+            <div className="flex items-center gap-3">
+              <div className="animate-fade-slide-up flex-1 rounded-2xl border border-indigo-200/25 bg-slate-800/75 p-4 shadow-soft">
                 <p className="text-xs uppercase tracking-wide text-slate-300">Buyer</p>
                 <p className="mt-2 text-lg font-bold">Buy</p>
                 <p className="mt-1 text-xs text-slate-300">Place order securely</p>
               </div>
 
-              <div className="animate-fade-slide-up delay-100 rounded-2xl border border-amber-200/25 bg-slate-800/75 p-4 shadow-soft">
+              <ArrowRight className="h-5 w-5 shrink-0 animate-pulse text-slate-400" />
+
+              <div className="animate-fade-slide-up delay-100 flex-1 rounded-2xl border border-amber-200/25 bg-slate-800/75 p-4 shadow-soft">
                 <p className="text-xs uppercase tracking-wide text-amber-200">Escrow</p>
                 <p className="mt-2 text-lg font-bold">Held</p>
                 <p className="mt-1 text-xs text-slate-300">Funds protected in transit</p>
               </div>
 
-              <div className="animate-fade-slide-up delay-200 rounded-2xl border border-emerald-200/25 bg-slate-800/75 p-4 shadow-soft">
+              <ArrowRight className="h-5 w-5 shrink-0 animate-pulse text-slate-400" />
+
+              <div className="animate-fade-slide-up delay-200 flex-1 rounded-2xl border border-emerald-200/25 bg-slate-800/75 p-4 shadow-soft">
                 <p className="text-xs uppercase tracking-wide text-emerald-200">Seller</p>
                 <p className="mt-2 text-lg font-bold">Release</p>
                 <p className="mt-1 text-xs text-slate-300">Payment on delivery</p>
               </div>
-            </div>
-
-            <div className="pointer-events-none mt-3 grid grid-cols-3 items-center gap-4 text-slate-300">
-              <div className="flex justify-end">
-                <ArrowRight className="h-5 w-5 animate-pulse" />
-              </div>
-              <div className="flex justify-center">
-                <ArrowRight className="h-5 w-5 animate-pulse" />
-              </div>
-              <div />
             </div>
           </div>
         </div>
@@ -353,13 +324,12 @@ export default function AuthPage() {
             </div>
           )}
 
-          <div className="mt-8 inline-flex items-center gap-2 rounded-pill bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 animate-fade-slide-up delay-300">
-            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-            OTP and session are mocked for UI flow testing
+          <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 animate-fade-slide-up delay-300">
+            <ShieldCheck className="h-3.5 w-3.5 text-indigo-600" />
+            Secured by Zyro Escrow
           </div>
         </div>
       </section>
     </main>
   );
 }
-

@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Toaster } from 'react-hot-toast';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import Layout from './components/common/Layout.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import AuthPage from './pages/AuthPage.jsx';
@@ -66,6 +67,7 @@ function AppRoutes() {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
+    <ErrorBoundary>
     <AuthProvider>
       <BrowserRouter>
         <AppRoutes />
@@ -101,5 +103,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         />
       </BrowserRouter>
     </AuthProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

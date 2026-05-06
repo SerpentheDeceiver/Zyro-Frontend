@@ -39,9 +39,6 @@ export function useChat(activeChatId) {
 
   useEffect(() => {
     loadMessages();
-    if (!activeChatId) return undefined;
-    const timer = window.setInterval(loadMessages, 5000);
-    return () => window.clearInterval(timer);
   }, [activeChatId, loadMessages]);
 
   const sendMessage = useCallback(

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Shield, AlertCircle, ChevronRight, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useParams } from 'react-router-dom';
@@ -6,7 +6,7 @@ import Badge from '../components/common/Badge.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import Modal from '../components/common/Modal.jsx';
 import StatusTimeline from '../components/common/StatusTimeline.jsx';
-import { mockOrders } from '../api/mock/orders.js';
+import { ordersAPI } from '../api';
 import { formatCurrency, formatDate } from '../utils/format';
 
 function getEscrowCardConfig(status) {
@@ -89,20 +89,42 @@ export default function OrderDetailPage() {
   const [disputeReason, setDisputeReason] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [disputing, setDisputing] = useState(false);
-
-  const foundOrder = useMemo(
-    () => mockOrders.find((o) => o.id === id || o.orderId === id) || null,
-    [id]
-  );
-
-  const [order, setOrder] = useState(foundOrder);
+  const [order, setOrder] = useState(null);
+  const isValidId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id ?? '');
+  const [loading, setLoading] = useState(isValidId);
 
   useEffect(() => {
-    setOrder(foundOrder);
+    if (!isValidId) return;
+    let cancelled = false;
+
+    async function loadOrder() {
+      setLoading(true);
+      try {
+        const nextOrder = await ordersAPI.getOrder(id);
+        if (!cancelled) setOrder(nextOrder);
+      } catch {
+        if (!cancelled) setOrder(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadOrder();
     setDisputeReason('');
     setShowConfirmModal(false);
     setShowDisputeModal(false);
-  }, [foundOrder]);
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <main className="page-shell py-8">
+        <p className="text-sm font-semibold text-slate-500">Loading order...</p>
+      </main>
+    );
+  }
 
   if (!order) {
     return (
@@ -119,16 +141,11 @@ export default function OrderDetailPage() {
   const timeline = buildTimeline(order.status, order.createdAt);
   const showActions = order.status === 'HELD';
 
-  function applyOrderStatus(nextStatus) {
-    const index = mockOrders.findIndex((o) => o.id === order.id);
-    if (index >= 0) mockOrders[index].status = nextStatus;
-    setOrder((prev) => ({ ...prev, status: nextStatus }));
-  }
-
   async function handleConfirmReceipt() {
     setConfirming(true);
     try {
-      applyOrderStatus('RELEASED');
+      const updated = await ordersAPI.confirmDelivery(order.id);
+      setOrder(updated);
       toast.success('Receipt confirmed. Payment released to seller.');
       setShowConfirmModal(false);
     } finally {
@@ -140,7 +157,8 @@ export default function OrderDetailPage() {
     if (!disputeReason.trim()) return;
     setDisputing(true);
     try {
-      applyOrderStatus('DISPUTED');
+      await ordersAPI.raiseDispute(order.id, disputeReason);
+      setOrder((prev) => ({ ...prev, status: 'DISPUTED', escrowStatus: 'FROZEN' }));
       toast.success('Dispute raised. Escrow is frozen.');
       setShowDisputeModal(false);
     } finally {
@@ -342,4 +360,3 @@ export default function OrderDetailPage() {
     </main>
   );
 }
-

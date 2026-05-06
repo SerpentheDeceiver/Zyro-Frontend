@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -31,6 +31,38 @@ const CATEGORIES = [
 
 const MAX_IMAGES = 5;
 const MAX_DESCRIPTION_LENGTH = 1000;
+
+const INDIA_STATES = [
+  'Tamil Nadu', 'Karnataka', 'Kerala', 'Maharashtra', 'Delhi',
+  'Uttar Pradesh', 'Gujarat', 'Rajasthan', 'Punjab', 'Haryana',
+  'West Bengal', 'Bihar', 'Odisha', 'Telangana', 'Andhra Pradesh',
+  'Madhya Pradesh', 'Chhattisgarh', 'Assam', 'Jharkhand', 'Uttarakhand',
+  'Goa', 'Tripura', 'Manipur', 'Meghalaya', 'Nagaland',
+  'Sikkim', 'Arunachal Pradesh', 'Puducherry', 'Chandigarh',
+  'Andaman & Nicobar', 'Ladakh', 'Lakshadweep',
+];
+
+const INDIA_DISTRICTS = {
+  'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Tiruchirappalli', 'Tirunelveli', 'Erode', 'Vellore'],
+  'Maharashtra': ['Mumbai', 'Pune', 'Nashik', 'Nagpur', 'Aurangabad', 'Thane', 'Solapur', 'Kolhapur'],
+  'Karnataka': ['Bengaluru', 'Mysuru', 'Hubli', 'Mangaluru', 'Belagavi', 'Ballari', 'Shivamogga', 'Dharwad'],
+  'Delhi': ['New Delhi', 'Dwarka', 'Rohini', 'Saket', 'Lajpat Nagar', 'Janakpuri', 'Pitampura', 'Connaught Place'],
+  'Telangana': ['Hyderabad', 'Warangal', 'Karimnagar', 'Nizamabad', 'Khammam', 'Mahbubnagar', 'Nalgonda', 'Rangareddy'],
+  'Kerala': ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kannur', 'Kollam', 'Palakkad', 'Alappuzha'],
+  'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Gandhinagar', 'Bhavnagar', 'Jamnagar', 'Junagadh'],
+  'West Bengal': ['Kolkata', 'Howrah', 'Durgapur', 'Asansol', 'Siliguri', 'Bardhaman', 'Kharagpur', 'Haldia'],
+  'Rajasthan': ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota', 'Ajmer', 'Bikaner', 'Alwar', 'Bharatpur'],
+  'Uttar Pradesh': ['Lucknow', 'Kanpur', 'Agra', 'Varanasi', 'Prayagraj', 'Ghaziabad', 'Meerut', 'Noida'],
+  'Punjab': ['Chandigarh', 'Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Mohali', 'Pathankot'],
+  'Haryana': ['Gurugram', 'Faridabad', 'Ambala', 'Rohtak', 'Hisar', 'Karnal', 'Panipat', 'Sonipat'],
+  'Madhya Pradesh': ['Bhopal', 'Indore', 'Jabalpur', 'Gwalior', 'Ujjain', 'Rewa', 'Satna', 'Sagar'],
+  'Bihar': ['Patna', 'Gaya', 'Bhagalpur', 'Muzaffarpur', 'Purnia', 'Darbhanga', 'Ara', 'Begusarai'],
+  'Odisha': ['Bhubaneswar', 'Cuttack', 'Rourkela', 'Sambalpur', 'Berhampur', 'Puri', 'Balasore', 'Baripada'],
+  'Andhra Pradesh': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Tirupati', 'Rajahmundry', 'Kakinada'],
+  'Puducherry': ['Puducherry', 'Karaikal', 'Mahe', 'Yanam'],
+  'Chandigarh': ['Chandigarh'],
+  'Goa': ['Panaji', 'Margao', 'Vasco da Gama', 'Mapusa', 'Ponda', 'Calangute', 'Canacona', 'Bicholim'],
+};
 
 export default function CreateListingPage() {
   const navigate = useNavigate();
@@ -81,10 +113,10 @@ export default function CreateListingPage() {
 
   function validateStep1() {
     const newErrors = {};
-    if (!form.title.trim()) newErrors.title = 'Title is required';
-    if (!form.price || Number(form.price) <= 0) newErrors.price = 'Price must be greater than 0';
-    if (!form.city.trim()) newErrors.city = 'City is required';
-    if (!form.state.trim()) newErrors.state = 'State is required';
+    if (!form.title.trim() || form.title.trim().length < 5) newErrors.title = 'Title must be at least 5 characters';
+    if (!form.price || Number(form.price) <= 0) newErrors.price = 'Please enter a valid price';
+    if (!form.city.trim()) newErrors.city = 'Please select a city';
+    if (!form.state.trim()) newErrors.state = 'Please select a state';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -130,7 +162,7 @@ export default function CreateListingPage() {
       await productsAPI.publishProduct(product.id);
       toast.success('Listing published!');
       navigate('/home');
-    } catch (error) {
+    } catch {
       toast.error('Failed to publish listing');
     } finally {
       setPublishing(false);
@@ -140,18 +172,15 @@ export default function CreateListingPage() {
   return (
     <main className="page-shell min-h-screen bg-slate-50 py-8 animate-fade-slide-up">
       <div className="mx-auto max-w-3xl">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-black text-ink">Create listing</h1>
-          <p className="mt-1 text-slate-500">Multi-step listing form</p>
+          <p className="mt-1 text-slate-500">Fill in the details to list your item</p>
         </div>
 
-        {/* Progress Bar */}
         <div className="mb-8">
           <StepProgressBar currentStep={step} />
         </div>
 
-        {/* Content */}
         <div className="rounded-xl bg-white p-8 shadow-soft">
           {step === 1 && (
             <Step1Details
@@ -199,37 +228,26 @@ function StepProgressBar({ currentStep }) {
 
         return (
           <div key={stepNumber} className="flex flex-1 items-center">
-            {/* Circle */}
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-full font-bold transition-colors ${
                 isCompleted
                   ? 'bg-green-500 text-white'
                   : isActive
-                    ? 'bg-primary text-white'
+                    ? 'bg-indigo-600 text-white'
                     : 'border-2 border-slate-300 text-slate-400'
               }`}
             >
-              {isCompleted ? (
-                <CheckCircle2 className="h-6 w-6" />
-              ) : (
-                stepNumber
-              )}
+              {isCompleted ? <CheckCircle2 className="h-6 w-6" /> : stepNumber}
             </div>
 
-            {/* Label */}
             <span
               className={`ml-2 text-sm font-semibold ${
-                isActive
-                  ? 'text-primary'
-                  : isCompleted
-                    ? 'text-green-600'
-                    : 'text-slate-400'
+                isActive ? 'text-indigo-600' : isCompleted ? 'text-green-600' : 'text-slate-400'
               }`}
             >
               {label}
             </span>
 
-            {/* Connector Line */}
             {stepNumber < steps.length && (
               <div
                 className={`mx-4 flex-1 h-1 transition-colors ${
@@ -245,36 +263,37 @@ function StepProgressBar({ currentStep }) {
 }
 
 function Step1Details({ form, errors, updateField, onNext }) {
+  const districts = INDIA_DISTRICTS[form.state] || [];
+
+  useEffect(() => {
+    if (form.state) updateField('city', '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.state]);
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-ink">Product Details</h2>
 
       {/* Title */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700">
-          Title *
-        </label>
+        <label className="mb-2 block text-sm font-semibold text-slate-700">Title *</label>
         <input
           type="text"
           value={form.title}
           onChange={(e) => updateField('title', e.target.value)}
-          placeholder="Enter product title"
+          placeholder="Enter product title (min 5 characters)"
           className={`w-full rounded-lg border px-4 py-2.5 outline-none transition ${
             errors.title
               ? 'border-rose-500 bg-rose-50'
-              : 'border-slate-300 bg-white focus:border-primary focus:ring-2 focus:ring-primary/10'
+              : 'border-slate-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10'
           }`}
         />
-        {errors.title && (
-          <p className="mt-1 text-xs text-rose-500">{errors.title}</p>
-        )}
+        {errors.title && <p className="mt-1 text-xs text-rose-500">{errors.title}</p>}
       </div>
 
       {/* Price */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700">
-          Price *
-        </label>
+        <label className="mb-2 block text-sm font-semibold text-slate-700">Price *</label>
         <div className="relative">
           <span className="absolute left-4 top-2.5 text-slate-500">₹</span>
           <input
@@ -286,29 +305,25 @@ function Step1Details({ form, errors, updateField, onNext }) {
             className={`w-full rounded-lg border px-4 py-2.5 pl-8 outline-none transition ${
               errors.price
                 ? 'border-rose-500 bg-rose-50'
-                : 'border-slate-300 bg-white focus:border-primary focus:ring-2 focus:ring-primary/10'
+                : 'border-slate-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10'
             }`}
           />
         </div>
-        {errors.price && (
-          <p className="mt-1 text-xs text-rose-500">{errors.price}</p>
-        )}
+        {errors.price && <p className="mt-1 text-xs text-rose-500">{errors.price}</p>}
       </div>
 
       {/* Condition */}
       <div>
-        <label className="mb-3 block text-sm font-semibold text-slate-700">
-          Condition *
-        </label>
+        <label className="mb-3 block text-sm font-semibold text-slate-700">Condition *</label>
         <div className="flex flex-wrap gap-2">
           {PRODUCT_CONDITIONS.map((condition) => (
             <div
               key={condition}
               onClick={() => updateField('condition', condition)}
-              className={`cursor-pointer rounded-pill border-2 px-4 py-2 font-semibold transition ${
+              className={`cursor-pointer rounded-full border-2 px-4 py-2 font-semibold transition ${
                 form.condition === condition
-                  ? 'border-primary bg-primary text-white'
-                  : 'border-slate-300 bg-white text-slate-700 hover:border-primary/50'
+                  ? 'border-indigo-600 bg-indigo-600 text-white'
+                  : 'border-slate-300 bg-white text-slate-700 hover:border-indigo-400'
               }`}
             >
               {condition.replace(/_/g, ' ')}
@@ -319,9 +334,7 @@ function Step1Details({ form, errors, updateField, onNext }) {
 
       {/* Category */}
       <div>
-        <label className="mb-3 block text-sm font-semibold text-slate-700">
-          Category *
-        </label>
+        <label className="mb-3 block text-sm font-semibold text-slate-700">Category *</label>
         <div className="grid grid-cols-4 gap-3">
           {CATEGORIES.map(({ id, icon: Icon, label }) => (
             <div
@@ -329,70 +342,76 @@ function Step1Details({ form, errors, updateField, onNext }) {
               onClick={() => updateField('category', id)}
               className={`cursor-pointer flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition ${
                 form.category === id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-slate-200 bg-white hover:border-primary/30'
+                  ? 'border-indigo-600 bg-indigo-50'
+                  : 'border-slate-200 bg-white hover:border-indigo-300'
               }`}
             >
-              <Icon
-                className={`h-6 w-6 ${
-                  form.category === id ? 'text-primary' : 'text-slate-400'
-                }`}
-              />
-              <span className="text-center text-xs font-semibold text-slate-700">
-                {label}
-              </span>
+              <Icon className={`h-6 w-6 ${form.category === id ? 'text-indigo-600' : 'text-slate-400'}`} />
+              <span className="text-center text-xs font-semibold text-slate-700">{label}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* City and State */}
+      {/* State and City Dropdowns */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-700">
-            City *
-          </label>
-          <input
-            type="text"
-            value={form.city}
-            onChange={(e) => updateField('city', e.target.value)}
-            placeholder="Enter city"
-            className={`w-full rounded-lg border px-4 py-2.5 outline-none transition ${
-              errors.city
-                ? 'border-rose-500 bg-rose-50'
-                : 'border-slate-300 bg-white focus:border-primary focus:ring-2 focus:ring-primary/10'
-            }`}
-          />
-          {errors.city && (
-            <p className="mt-1 text-xs text-rose-500">{errors.city}</p>
-          )}
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-700">
-            State *
-          </label>
-          <input
-            type="text"
+          <label className="mb-2 block text-sm font-semibold text-slate-700">State *</label>
+          <select
             value={form.state}
             onChange={(e) => updateField('state', e.target.value)}
-            placeholder="Enter state"
-            className={`w-full rounded-lg border px-4 py-2.5 outline-none transition ${
+            className={`w-full rounded-lg border px-4 py-2.5 outline-none transition bg-white ${
               errors.state
                 ? 'border-rose-500 bg-rose-50'
-                : 'border-slate-300 bg-white focus:border-primary focus:ring-2 focus:ring-primary/10'
+                : 'border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10'
             }`}
-          />
-          {errors.state && (
-            <p className="mt-1 text-xs text-rose-500">{errors.state}</p>
+          >
+            <option value="">Select state</option>
+            {INDIA_STATES.map((state) => (
+              <option key={state} value={state}>{state}</option>
+            ))}
+          </select>
+          {errors.state && <p className="mt-1 text-xs text-rose-500">{errors.state}</p>}
+        </div>
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-slate-700">City / District *</label>
+          {districts.length > 0 ? (
+            <select
+              value={form.city}
+              onChange={(e) => updateField('city', e.target.value)}
+              className={`w-full rounded-lg border px-4 py-2.5 outline-none transition bg-white ${
+                errors.city
+                  ? 'border-rose-500 bg-rose-50'
+                  : 'border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10'
+              }`}
+            >
+              <option value="">Select city</option>
+              {districts.map((city) => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={form.city}
+              onChange={(e) => updateField('city', e.target.value)}
+              placeholder={form.state ? 'Enter city' : 'Select state first'}
+              disabled={!form.state}
+              className={`w-full rounded-lg border px-4 py-2.5 outline-none transition ${
+                errors.city
+                  ? 'border-rose-500 bg-rose-50'
+                  : 'border-slate-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 disabled:bg-slate-50 disabled:text-slate-400'
+              }`}
+            />
           )}
+          {errors.city && <p className="mt-1 text-xs text-rose-500">{errors.city}</p>}
         </div>
       </div>
 
-      {/* Next Button */}
       <div className="flex justify-end pt-4">
         <div
           onClick={onNext}
-          className="flex cursor-pointer items-center gap-2 rounded-pill bg-primary px-6 py-2.5 font-semibold text-white transition hover:bg-primary-dark"
+          className="flex cursor-pointer items-center gap-2 rounded-full bg-indigo-600 px-6 py-2.5 font-semibold text-white transition hover:bg-indigo-700"
         >
           Next <ChevronRight className="h-4 w-4" />
         </div>
@@ -404,6 +423,7 @@ function Step1Details({ form, errors, updateField, onNext }) {
 function Step2ImagesDescription({
   form,
   errors,
+  updateField,
   updateImageUrl,
   addImageUrl,
   removeImageUrl,
@@ -440,30 +460,28 @@ function Step2ImagesDescription({
         {form.imageUrls.length < MAX_IMAGES && (
           <div
             onClick={addImageUrl}
-            className="mt-3 cursor-pointer text-sm font-semibold text-primary hover:text-primary-dark"
+            className="mt-3 cursor-pointer text-sm font-semibold text-indigo-600 hover:text-indigo-700"
           >
             + Add another image
           </div>
         )}
       </div>
 
-      {/* Description */}
+      {/* Description — controlled via updateField prop */}
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700">
-          Description *
-        </label>
+        <label className="mb-2 block text-sm font-semibold text-slate-700">Description *</label>
         <textarea
           value={form.description}
           onChange={(e) => {
             const value = e.target.value.slice(0, MAX_DESCRIPTION_LENGTH);
             updateField('description', value);
           }}
-          placeholder="Describe your product in detail..."
-          rows="5"
+          placeholder="Describe your product — condition details, reason for selling, included accessories, etc."
+          rows={5}
           className={`w-full resize-none rounded-lg border px-4 py-2.5 outline-none transition ${
             errors.description
               ? 'border-rose-500 bg-rose-50'
-              : 'border-slate-300 bg-white focus:border-primary focus:ring-2 focus:ring-primary/10'
+              : 'border-slate-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10'
           }`}
         />
         <div className="mt-2 flex justify-between">
@@ -476,17 +494,16 @@ function Step2ImagesDescription({
         </div>
       </div>
 
-      {/* Navigation Buttons */}
       <div className="flex justify-between gap-3 pt-4">
         <div
           onClick={onBack}
-          className="flex cursor-pointer items-center gap-2 rounded-pill border-2 border-slate-300 px-6 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-100"
+          className="flex cursor-pointer items-center gap-2 rounded-full border-2 border-slate-300 px-6 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-100"
         >
           <ChevronLeft className="h-4 w-4" /> Back
         </div>
         <div
           onClick={onNext}
-          className="flex cursor-pointer items-center gap-2 rounded-pill bg-primary px-6 py-2.5 font-semibold text-white transition hover:bg-primary-dark"
+          className="flex cursor-pointer items-center gap-2 rounded-full bg-indigo-600 px-6 py-2.5 font-semibold text-white transition hover:bg-indigo-700"
         >
           Next <ChevronRight className="h-4 w-4" />
         </div>
@@ -509,7 +526,7 @@ function ImageUrlInput({ url, index, onChange, onRemove, canRemove }) {
             setImageError(false);
           }}
           placeholder="Paste image URL (e.g., https://...)"
-          className="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+          className="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
         />
         {url.trim() && (
           <div className="mt-2 h-16 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
@@ -544,12 +561,14 @@ function ImageUrlInput({ url, index, onChange, onRemove, canRemove }) {
 
 function Step3ReviewPublish({ form, publishing, onBack, onPublish }) {
   const validImageUrls = form.imageUrls.filter((url) => url.trim());
+  const shortDesc = form.description.length > 100
+    ? `${form.description.slice(0, 100)}...`
+    : form.description;
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-ink">Review & Publish</h2>
 
-      {/* Preview Card */}
       <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
         <div className="aspect-video overflow-hidden bg-slate-100">
           {validImageUrls[0] ? (
@@ -557,9 +576,7 @@ function Step3ReviewPublish({ form, publishing, onBack, onPublish }) {
               src={validImageUrls[0]}
               alt={form.title}
               className="h-full w-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
+              onError={(e) => { e.target.style.display = 'none'; }}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-slate-400">
@@ -569,30 +586,29 @@ function Step3ReviewPublish({ form, publishing, onBack, onPublish }) {
         </div>
         <div className="p-6">
           <h3 className="text-2xl font-bold text-ink">{form.title}</h3>
-          <p className="mt-2 text-3xl font-black text-primary">
+          <p className="mt-2 text-3xl font-black text-indigo-600">
             ₹{Number(form.price).toLocaleString('en-IN')}
           </p>
-          <p className="mt-4 text-slate-600">{form.description}</p>
+          {shortDesc && (
+            <p className="mt-3 text-sm text-slate-600">{shortDesc}</p>
+          )}
         </div>
       </div>
 
-      {/* Summary Details */}
       <div className="space-y-3 rounded-lg bg-slate-50 p-6">
         <SummaryRow label="Category" value={form.category} />
         <SummaryRow label="Condition" value={form.condition.replace(/_/g, ' ')} />
-        <SummaryRow label="Location" value={`${form.city}, ${form.state}`} />
+        <SummaryRow label="Location" value={[form.city, form.state].filter(Boolean).join(', ') || '—'} />
         <SummaryRow label="Images" value={`${validImageUrls.length} image(s)`} />
       </div>
 
-      {/* Publish Section */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div
-          onClick={onPublish}
-          disabled={publishing}
-          className={`w-full rounded-pill px-6 py-3.5 text-center font-bold text-white transition ${
+          onClick={!publishing ? onPublish : undefined}
+          className={`w-full rounded-full px-6 py-3.5 text-center font-bold text-white transition ${
             publishing
               ? 'bg-slate-400 cursor-not-allowed'
-              : 'cursor-pointer bg-primary hover:bg-primary-dark'
+              : 'cursor-pointer bg-indigo-600 hover:bg-indigo-700'
           }`}
         >
           {publishing ? 'Publishing...' : 'Publish Listing'}
@@ -600,7 +616,7 @@ function Step3ReviewPublish({ form, publishing, onBack, onPublish }) {
 
         <div
           onClick={onBack}
-          className="cursor-pointer text-center text-sm font-semibold text-primary hover:text-primary-dark"
+          className="cursor-pointer text-center text-sm font-semibold text-indigo-600 hover:text-indigo-700"
         >
           ← Back to edit
         </div>
