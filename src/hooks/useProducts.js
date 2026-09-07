@@ -6,7 +6,8 @@ export function useProducts(filters = {}) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const stableFilters = useMemo(() => filters, [filters.category, filters.search, filters.state]);
+  const { category, search, state } = filters;
+  const stableFilters = useMemo(() => ({ category, search, state }), [category, search, state]);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);

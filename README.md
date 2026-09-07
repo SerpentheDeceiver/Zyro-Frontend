@@ -1,8 +1,47 @@
 # Zyro — Frontend
 
+## Project overview
+
 Zyro is an **escrow-based peer-to-peer marketplace** built with React and Vite. Buyers and sellers transact safely: funds are held in escrow after a purchase and released to the seller only after the buyer confirms delivery.
 
 This document covers everything in the frontend — pages, components, hooks, API layer, routes, and how to run it.
+
+---
+
+## Features
+
+- Marketplace browsing, search, filtering, and product details
+- Mock authentication with seeded products, orders, chats, and wallet data
+- Buyer and seller order flows with escrow status
+- Chat, wallet, profile, notifications, KYC, and listing flows
+- Switchable mock and HTTP API implementations
+
+## Installation
+
+```bash
+npm install
+```
+
+## Running
+
+```bash
+npm run dev
+```
+
+The default development server runs at `http://localhost:5173`. It uses mock mode, so no backend is required.
+
+## Environment variables
+
+Copy `.env.example` to `.env` when configuration is needed. `.env` is ignored and must not be committed.
+
+```env
+VITE_USE_MOCK=true
+VITE_API_BASE_URL=http://localhost:8080/api/v1
+VITE_APP_NAME=Zyro
+VITE_ENABLE_GOOGLE_LOGIN=false
+```
+
+`VITE_API_BASE_URL` is only used in live mode. `VITE_USE_MOCK=true` is the recommended default for frontend development.
 
 ---
 
@@ -10,9 +49,9 @@ This document covers everything in the frontend — pages, components, hooks, AP
 
 1. [Tech Stack](#tech-stack)
 2. [Project Structure](#project-structure)
-3. [Setup & Running](#setup--running)
-4. [Mock Mode vs Live Mode](#mock-mode-vs-live-mode)
-5. [Routes](#routes)
+3. [Mock Mode](#mock-mode)
+4. [Live Mode](#live-mode)
+5. [Available routes](#available-routes)
 6. [Pages](#pages)
 7. [React Hooks Used](#react-hooks-used)
 8. [Custom Hooks](#custom-hooks)
@@ -21,7 +60,9 @@ This document covers everything in the frontend — pages, components, hooks, AP
 11. [Auth Context](#auth-context)
 12. [Design System](#design-system)
 13. [Animations & CSS](#animations--css)
-14. [Backend Integration Notes](#backend-integration-notes)
+14. [Development Workflow](#development-workflow)
+15. [Contribution Notes](#contribution-notes)
+16. [Backend Integration Notes](#backend-integration-notes)
 
 ---
 
@@ -44,7 +85,7 @@ This document covers everything in the frontend — pages, components, hooks, AP
 ```
 frontend/
 ├── public/
-│   └── src/assets/logo/        # SVG logo
+│   └── favicon.png             # Browser icon
 │
 ├── src/
 │   ├── api/
@@ -129,7 +170,7 @@ frontend/
 │   ├── index.css                # Tailwind directives + custom animations
 │   └── main.jsx                 # App entry point, routing tree, ErrorBoundary
 │
-├── .env                         # VITE_USE_MOCK, VITE_API_BASE_URL
+├── .env.example                # Documented local configuration
 ├── index.html
 ├── package.json
 ├── tailwind.config.js
@@ -138,28 +179,18 @@ frontend/
 
 ---
 
-## Setup & Running
+## Folder explanations
 
-```bash
-# Install dependencies
-npm install
+- `src/pages/` contains route-level screens and page-specific UI.
+- `src/components/` contains reusable visual building blocks.
+- `src/hooks/` contains stateful and data-fetching hooks.
+- `src/context/` contains application-wide state providers.
+- `src/api/mock/` contains offline implementations and seed data.
+- `src/api/real/` contains live backend request implementations.
+- `src/routes/` contains route guards.
+- `src/utils/` contains shared formatting and helper functions.
 
-# Start dev server (mock mode — no backend needed)
-npm run dev
-```
-
-App runs at `http://localhost:5173`
-
-**Environment variables** (`.env`):
-
-```env
-VITE_USE_MOCK=true
-VITE_API_BASE_URL=http://localhost:8080/api/v1
-```
-
----
-
-## Mock Mode vs Live Mode
+## Mock Mode
 
 The entire API layer has two implementations — mock and real — that share the same function signatures.
 
@@ -179,9 +210,15 @@ export const walletAPI  = USE_MOCK ? mockWalletAPI  : realWalletAPI;
 - No network requests — login, browsing, ordering, chat, and wallet all work offline
 - Switching to live mode only requires setting `VITE_USE_MOCK=false` and starting the Spring Boot backend
 
+Mock mode makes no network requests and should work after only `npm install` and `npm run dev`.
+
+## Live Mode
+
+Set `VITE_USE_MOCK=false`, configure `VITE_API_BASE_URL`, and start the backend services described in [Backend Integration Notes](#backend-integration-notes). The real API modules retain the same function signatures as the mock modules.
+
 ---
 
-## Routes
+## Available routes
 
 All routes except `/auth` are wrapped in `ProtectedRoute` (requires login).
 
@@ -481,6 +518,33 @@ All keyframe animations are defined in `src/index.css` and exposed as Tailwind u
 | `animate-slide-in-right` | Slide from right edge |
 
 Stagger delays: `.animation-delay-100` through `.animation-delay-500` (steps of 100ms).
+
+---
+
+## Development Workflow
+
+1. Install dependencies with `npm install`.
+2. Run `npm run dev` in mock mode while developing UI and flows.
+3. Run `npm run lint` before opening a pull request.
+4. Run `npm run build` to verify the production bundle.
+5. Keep API changes isolated to `src/api/` and preserve the shared mock/real API signatures.
+
+Available scripts:
+
+| Script | Purpose |
+|--------|---------|
+| `npm run dev` | Start the Vite development server |
+| `npm run build` | Create a production build |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint with warnings treated as errors |
+
+## Contribution Notes
+
+- Keep changes focused and avoid committing generated files, local environment files, or editor settings.
+- Do not commit `node_modules`, `dist`, coverage reports, logs, or temporary files.
+- Preserve existing routes, API contracts, and mock-mode support unless a change explicitly requires otherwise.
+- Add or update mock data when a new frontend flow needs deterministic data.
+- Include a short description of the user-facing behavior and the validation commands you ran.
 
 ---
 

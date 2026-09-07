@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 import {
   Store,
   Shield,
@@ -13,12 +12,10 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import Button from '../components/common/Button.jsx';
 
 const ID_TYPES = ['Aadhaar', 'PAN', 'Passport', 'Voter ID'];
 
 export default function KYCPage() {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [step, setStep] = useState(1);
@@ -47,7 +44,7 @@ export default function KYCPage() {
 
   // Already verified state
   if (user?.role === 'SELLER' && user?.isVerified) {
-    return <VerifiedSellerState user={user} navigate={navigate} />;
+    return <VerifiedSellerState user={user} />;
   }
 
   // Not a seller - show upgrade flow
@@ -158,7 +155,7 @@ export default function KYCPage() {
   }
 }
 
-function VerifiedSellerState({ user, navigate }) {
+function VerifiedSellerState({ user }) {
   return (
     <main className="page-shell min-h-screen bg-slate-50 py-8">
       <div className="mx-auto max-w-2xl">
@@ -186,7 +183,7 @@ function VerifiedSellerState({ user, navigate }) {
           </div>
 
           <h1 className="text-4xl font-black text-ink mb-3">
-            You're a verified seller on Zyro
+            You&apos;re a verified seller on Zyro
           </h1>
 
           <div className="bg-green-50 rounded-lg p-4 mb-6">
@@ -815,7 +812,7 @@ function SubmissionSuccessState() {
           </h1>
 
           <p className="text-lg text-slate-600 mb-8">
-            We'll verify your details within 24 hours. You'll be notified once your seller account is activated.
+            We&apos;ll verify your details within 24 hours. You&apos;ll be notified once your seller account is activated.
           </p>
 
           <div className="bg-blue-50 rounded-lg p-4 mb-8">
@@ -884,4 +881,3 @@ function SubmissionSuccessState() {
     </main>
   );
 }
-

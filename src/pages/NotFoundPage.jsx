@@ -19,9 +19,9 @@ export default function NotFoundPage() {
       </div>
 
       {/* Subtitle */}
-      <h2 className="mb-4 text-2xl font-bold text-ink">This page doesn't exist on Zyro.</h2>
+      <h2 className="mb-4 text-2xl font-bold text-ink">This page doesn&apos;t exist on Zyro.</h2>
       <p className="mb-8 max-w-md text-center text-slate-600">
-        The page you're looking for has moved or never existed. Let's get you back on track.
+        The page you&apos;re looking for has moved or never existed. Let&apos;s get you back on track.
       </p>
 
       {/* CTA Button */}

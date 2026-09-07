@@ -160,7 +160,7 @@ export default function Navbar() {
             <img
               src="/src/assets/logo/logo.svg"
               alt="Zyro Logo"
-              className="h-12 w-12 filter brightness-0"
+              className="h-16 w-16 filter brightness-0"
             />
           </Link>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   User, Wallet, Clipboard, Grid3x3, Shield, Settings,
   CheckCircle, TrendingUp, TrendingDown,
@@ -9,8 +10,10 @@ import Avatar from '../components/common/Avatar.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import Modal from '../components/common/Modal.jsx';
 import SkeletonLoader from '../components/common/SkeletonLoader.jsx';
+import ProductCard from '../components/product/ProductCard.jsx';
+import ErrorCard from '../components/common/ErrorCard.jsx';
 import { formatDate } from '../utils/format';
-import { walletAPI } from '../api';
+import { walletAPI, productsAPI } from '../api';
 
 const SIDEBAR_ITEMS = [
   { id: 'profile',  label: 'Profile',      icon: User },
@@ -350,6 +353,31 @@ function WalletTabContent({ balance, setBalance }) {
 }
 
 function MyListingsTabContent() {
+  const navigate = useNavigate();
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  async function loadListings() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await productsAPI.getMyListings({ page: 0, size: 20 });
+      // Handle pagination response - extract content array
+      const items = response?.content || response || [];
+      setListings(Array.isArray(items) ? items : []);
+    } catch (err) {
+      console.error('Failed to load listings:', err);
+      setError('Failed to load your listings');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadListings();
+  }, []);
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
@@ -365,12 +393,32 @@ function MyListingsTabContent() {
         </div>
       </div>
 
-      <EmptyState
-        title="No listings yet"
-        subtitle="Create your first listing to start selling on Zyro."
-        actionLabel="Create Listing"
-        onAction={() => (window.location.href = '/create-listing')}
-      />
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <SkeletonLoader key={i} variant="list-item" />
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorCard message={error} onRetry={loadListings} />
+      ) : listings.length > 0 ? (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {listings.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onClick={() => navigate(`/products/${product.id}`)}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title="No listings yet"
+          subtitle="Create your first listing to start selling on Zyro."
+          actionLabel="Create Listing"
+          onAction={() => (window.location.href = '/create-listing')}
+        />
+      )}
     </div>
   );
 }

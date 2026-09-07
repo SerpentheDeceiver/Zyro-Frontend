@@ -5,14 +5,11 @@ import {
   Bell,
   Lock,
   Globe,
-  LogOut,
   AlertTriangle,
   ExternalLink,
   Mail,
-  Phone,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Modal } from '../components/common/Modal.jsx';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -461,7 +458,7 @@ function DeleteAccountModal({ isOpen, onClose, confirmText, setConfirmText, onCo
         </div>
 
         <p className="text-xs font-semibold text-slate-600 mb-2">
-          Type "DELETE" to confirm:
+          Type &quot;DELETE&quot; to confirm:
         </p>
         <input
           type="text"
@@ -490,4 +487,3 @@ function DeleteAccountModal({ isOpen, onClose, confirmText, setConfirmText, onCo
     </div>
   );
 }
-

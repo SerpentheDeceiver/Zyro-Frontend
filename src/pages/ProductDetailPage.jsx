@@ -60,6 +60,8 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     loadProduct();
+    // loadProduct is scoped to this page and intentionally runs only when the route id changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Escape key closes lightbox

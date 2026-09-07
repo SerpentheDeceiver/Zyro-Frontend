@@ -116,7 +116,7 @@ export default function OrderDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, isValidId]);
 
   if (loading) {
     return (

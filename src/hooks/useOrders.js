@@ -6,9 +6,11 @@ export function useOrders() {
   const [buying, setBuying] = useState([]);
   const [selling, setSelling] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [buyerOrders, sellerOrders] = await Promise.all([
         ordersAPI.getBuyingOrders(),
@@ -16,7 +18,9 @@ export function useOrders() {
       ]);
       setBuying(buyerOrders || []);
       setSelling(sellerOrders || []);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load orders:', err);
+      setError('Failed to load orders');
       setBuying([]);
       setSelling([]);
     } finally {
@@ -37,5 +41,5 @@ export function useOrders() {
     [loadOrders]
   );
 
-  return { buying, selling, loading, confirmDelivery, refetch: loadOrders };
+  return { buying, selling, loading, error, confirmDelivery, refetch: loadOrders };
 }

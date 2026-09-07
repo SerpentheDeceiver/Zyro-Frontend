@@ -14,10 +14,12 @@ import {
   Grid3x3,
   X,
   Camera,
+  Upload,
+  Loader,
 } from 'lucide-react';
 import { productsAPI } from '../api';
-import Button from '../components/common/Button.jsx';
 import { PRODUCT_CONDITIONS } from '../utils/constants';
+import { useImageUpload } from '../hooks/useImageUpload';
 
 const CATEGORIES = [
   { id: 'Electronics', icon: Laptop, label: 'Electronics' },
@@ -443,7 +445,7 @@ function Step2ImagesDescription({
         </label>
         <div className="space-y-3">
           {form.imageUrls.map((url, index) => (
-            <ImageUrlInput
+            <ImageUploadInput
               key={index}
               url={url}
               index={index}
@@ -512,24 +514,75 @@ function Step2ImagesDescription({
   );
 }
 
-function ImageUrlInput({ url, index, onChange, onRemove, canRemove }) {
+function ImageUploadInput({ url, index, onChange, onRemove, canRemove }) {
+  const { uploading, error, uploadImage, clearError } = useImageUpload();
   const [imageError, setImageError] = useState(false);
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      clearError();
+      const uploadedUrl = await uploadImage(file);
+      if (uploadedUrl) {
+        onChange(uploadedUrl);
+        toast.success('Image uploaded successfully!');
+      } else {
+        toast.error(error || 'Failed to upload image');
+      }
+    }
+  };
 
   return (
     <div className="flex gap-3">
-      <div className="flex-1">
-        <input
-          type="url"
-          value={url}
-          onChange={(e) => {
-            onChange(e.target.value);
-            setImageError(false);
-          }}
-          placeholder="Paste image URL (e.g., https://...)"
-          className="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
-        />
+      <div className="flex-1 space-y-2">
+        <div className="relative">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            disabled={uploading}
+            className="hidden"
+            id={`image-upload-${index}`}
+          />
+          <label
+            htmlFor={`image-upload-${index}`}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-8 transition hover:border-indigo-500 hover:bg-indigo-50 disabled:cursor-not-allowed"
+          >
+            {uploading ? (
+              <>
+                <Loader className="h-5 w-5 animate-spin text-indigo-600" />
+                <span className="text-sm font-semibold text-slate-600">Uploading...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-5 w-5 text-slate-400" />
+                <div className="text-center">
+                  <span className="text-sm font-semibold text-slate-700">Upload image</span>
+                  <p className="text-xs text-slate-500">or paste URL below</p>
+                </div>
+              </>
+            )}
+          </label>
+        </div>
+
+        {error && <p className="text-xs text-rose-500">{error}</p>}
+
+        {/* Fallback URL input for manual entry */}
+        {!url && (
+          <input
+            type="url"
+            placeholder="Or paste image URL (e.g., https://...)"
+            onChange={(e) => {
+              onChange(e.target.value);
+              setImageError(false);
+            }}
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
+          />
+        )}
+
+        {/* Image preview */}
         {url.trim() && (
-          <div className="mt-2 h-16 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <div className="h-32 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
             {imageError ? (
               <div className="flex h-full items-center justify-center gap-2 text-slate-400">
                 <Camera className="h-4 w-4" />
@@ -547,7 +600,7 @@ function ImageUrlInput({ url, index, onChange, onRemove, canRemove }) {
         )}
       </div>
 
-      {canRemove && (
+      {canRemove && url && (
         <div
           onClick={onRemove}
           className="flex cursor-pointer items-center justify-center rounded-lg border border-rose-300 bg-rose-50 px-3 transition hover:bg-rose-100"

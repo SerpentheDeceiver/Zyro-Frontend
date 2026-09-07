@@ -57,6 +57,8 @@ export default function AuthPage() {
     void handleVerifyOTP(joined).finally(() => {
       submitGuard.current = false;
     });
+    // handleVerifyOTP is defined in the component and intentionally runs only after OTP changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otp, step]);
 
   if (isAuthenticated) return <Navigate to="/home" replace />;
