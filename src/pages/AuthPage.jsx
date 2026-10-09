@@ -236,7 +236,7 @@ export default function AuthPage() {
                         className="w-28 border-r border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none"
                       >
                         {COUNTRY_OPTIONS.map((option) => (
-                          <option key={option.code} value={option.code}>
+                          <option key={`${option.label}-${option.code}`} value={option.code}>
                             {option.flag} {option.code}
                           </option>
                         ))}

@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Lock, Package, ShieldCheck, Wallet2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { productsAPI } from '../api';
+import { USE_MOCK } from '../api/config';
 import Button from '../components/common/Button.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import ErrorCard from '../components/common/ErrorCard.jsx';
@@ -10,7 +11,7 @@ import ProductCard from '../components/product/ProductCard.jsx';
 import { normalizePage } from '../utils/format';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 
-const CATEGORIES = ['All', 'Electronics', 'Fashion', 'Home', 'Books', 'Sports', 'Collectibles', 'Other'];
+const MOCK_CATEGORIES = ['All', 'Electronics', 'Fashion', 'Home', 'Books', 'Sports', 'Collectibles', 'Other'];
 
 const ESCROW_STEPS = [
   { key: 'buy',     label: 'Buy',     icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-100' },
@@ -25,6 +26,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [categories, setCategories] = useState(MOCK_CATEGORIES);
   const [activeStep, setActiveStep] = useState(0);
 
   async function loadProducts() {
@@ -48,6 +50,13 @@ export default function HomePage() {
     loadProducts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
+
+  useEffect(() => {
+    if (USE_MOCK) return;
+    productsAPI.getCategories()
+      .then((items) => setCategories(['All', ...items.filter((item) => item.isActive !== false).map((item) => item.name)]))
+      .catch(() => setCategories(['All']));
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -166,7 +175,7 @@ export default function HomePage() {
 
           <div className="flex w-full items-center overflow-x-auto pb-1">
             <div className="inline-flex min-w-max gap-2">
-              {CATEGORIES.map((category) => {
+              {categories.map((category) => {
                 const active = category === activeCategory;
                 return (
                   <button

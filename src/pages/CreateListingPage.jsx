@@ -18,10 +18,11 @@ import {
   Loader,
 } from 'lucide-react';
 import { productsAPI } from '../api';
+import { USE_MOCK } from '../api/config';
 import { PRODUCT_CONDITIONS } from '../utils/constants';
-import { useImageUpload } from '../hooks/useImageUpload';
+import { IMAGE_UPLOAD_CONFIGURED, useImageUpload } from '../hooks/useImageUpload';
 
-const CATEGORIES = [
+const MOCK_CATEGORIES = [
   { id: 'Electronics', icon: Laptop, label: 'Electronics' },
   { id: 'Fashion', icon: Shirt, label: 'Fashion' },
   { id: 'Home', icon: Home, label: 'Home' },
@@ -70,6 +71,18 @@ export default function CreateListingPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [publishing, setPublishing] = useState(false);
+  const [categories, setCategories] = useState(MOCK_CATEGORIES);
+
+  useEffect(() => {
+    if (USE_MOCK) return;
+    productsAPI.getCategories()
+      .then((items) => setCategories(items.filter((item) => item.isActive !== false).map((item) => ({
+        id: item.name,
+        label: item.name,
+        icon: MOCK_CATEGORIES.find((category) => category.id === item.name)?.icon || Grid3x3,
+      }))))
+      .catch(() => setCategories([]));
+  }, []);
 
   const [form, setForm] = useState({
     title: '',
@@ -155,6 +168,7 @@ export default function CreateListingPage() {
         price: Number(form.price),
         condition: form.condition,
         category: form.category,
+        categoryName: form.category,
         locationCity: form.city,
         locationState: form.state,
         negotiable: true,
@@ -185,8 +199,9 @@ export default function CreateListingPage() {
 
         <div className="rounded-xl bg-white p-8 shadow-soft">
           {step === 1 && (
-            <Step1Details
-              form={form}
+          <Step1Details
+            form={form}
+            categories={categories}
               errors={errors}
               updateField={updateField}
               onNext={goToNextStep}
@@ -264,7 +279,7 @@ function StepProgressBar({ currentStep }) {
   );
 }
 
-function Step1Details({ form, errors, updateField, onNext }) {
+function Step1Details({ form, categories, errors, updateField, onNext }) {
   const districts = INDIA_DISTRICTS[form.state] || [];
 
   useEffect(() => {
@@ -338,7 +353,7 @@ function Step1Details({ form, errors, updateField, onNext }) {
       <div>
         <label className="mb-3 block text-sm font-semibold text-slate-700">Category *</label>
         <div className="grid grid-cols-4 gap-3">
-          {CATEGORIES.map(({ id, icon: Icon, label }) => (
+          {categories.map(({ id, icon: Icon, label }) => (
             <div
               key={id}
               onClick={() => updateField('category', id)}
@@ -536,18 +551,19 @@ function ImageUploadInput({ url, index, onChange, onRemove, canRemove }) {
     <div className="flex gap-3">
       <div className="flex-1 space-y-2">
         <div className="relative">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            disabled={uploading}
-            className="hidden"
-            id={`image-upload-${index}`}
-          />
-          <label
-            htmlFor={`image-upload-${index}`}
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-8 transition hover:border-indigo-500 hover:bg-indigo-50 disabled:cursor-not-allowed"
-          >
+          {IMAGE_UPLOAD_CONFIGURED && <>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              disabled={uploading}
+              className="hidden"
+              id={`image-upload-${index}`}
+            />
+            <label
+              htmlFor={`image-upload-${index}`}
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-8 transition hover:border-indigo-500 hover:bg-indigo-50 disabled:cursor-not-allowed"
+            >
             {uploading ? (
               <>
                 <Loader className="h-5 w-5 animate-spin text-indigo-600" />
@@ -562,7 +578,8 @@ function ImageUploadInput({ url, index, onChange, onRemove, canRemove }) {
                 </div>
               </>
             )}
-          </label>
+            </label>
+          </>}
         </div>
 
         {error && <p className="text-xs text-rose-500">{error}</p>}
@@ -571,7 +588,7 @@ function ImageUploadInput({ url, index, onChange, onRemove, canRemove }) {
         {!url && (
           <input
             type="url"
-            placeholder="Or paste image URL (e.g., https://...)"
+            placeholder="Paste image URL (e.g., https://...)"
             onChange={(e) => {
               onChange(e.target.value);
               setImageError(false);

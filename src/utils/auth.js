@@ -1,5 +1,7 @@
+import { USE_MOCK } from '../api/config';
+
 export function canSell(user) {
-  return Boolean(user?.isVerified);
+  return USE_MOCK ? Boolean(user?.isVerified) : user?.role === 'SELLER';
 }
 
 export function buildUserFromAuth(authResponse) {

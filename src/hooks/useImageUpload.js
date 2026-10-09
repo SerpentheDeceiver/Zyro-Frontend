@@ -8,6 +8,8 @@ const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+export const IMAGE_UPLOAD_CONFIGURED = Boolean(supabase);
+
 /**
  * Hook for uploading images to Supabase Storage
  * @returns {Object} { uploading, error, uploadImage, clearError }

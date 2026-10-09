@@ -12,11 +12,12 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { USE_MOCK } from '../api/config';
 
 const ID_TYPES = ['Aadhaar', 'PAN', 'Passport', 'Voter ID'];
 
 export default function KYCPage() {
-  const { user } = useAuth();
+  const { user, becomeSeller } = useAuth();
 
   const [step, setStep] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -41,6 +42,46 @@ export default function KYCPage() {
     idBack: null,
     selfie: null,
   });
+
+  // The live backend grants the SELLER role directly. It has no KYC upload API.
+  if (!USE_MOCK) {
+    return (
+      <main className="page-shell py-10">
+        <section className="panel mx-auto max-w-2xl p-8 text-center">
+          <Store className="mx-auto h-12 w-12 text-indigo-600" />
+          <h1 className="mt-5 text-2xl font-bold text-slate-950">
+            {user?.role === 'SELLER' ? 'Seller account active' : 'Become a seller'}
+          </h1>
+          <p className="mt-3 text-slate-600">
+            {user?.role === 'SELLER'
+              ? 'You can now create and publish listings.'
+              : 'Activate seller access to create listings. Identity document upload is not available in this demo.'}
+          </p>
+          {user?.role === 'SELLER' ? (
+            <a href="/create-listing" className="btn-primary mt-6 inline-flex">Create listing</a>
+          ) : (
+            <button
+              type="button"
+              className="btn-primary mt-6"
+              disabled={publishing}
+              onClick={async () => {
+                setPublishing(true);
+                try {
+                  await becomeSeller();
+                } catch {
+                  toast.error('Could not activate seller access.');
+                } finally {
+                  setPublishing(false);
+                }
+              }}
+            >
+              {publishing ? 'Activating...' : 'Activate seller access'}
+            </button>
+          )}
+        </section>
+      </main>
+    );
+  }
 
   // Already verified state
   if (user?.role === 'SELLER' && user?.isVerified) {

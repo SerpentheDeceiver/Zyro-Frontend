@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { productsAPI } from '../api';
+import { USE_MOCK } from '../api/config';
 import ProductCard from '../components/product/ProductCard.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import ErrorCard from '../components/common/ErrorCard.jsx';
 import SkeletonLoader from '../components/common/SkeletonLoader.jsx';
 import { normalizePage } from '../utils/format';
 
-const CATEGORIES = ['All', 'Electronics', 'Fashion', 'Home', 'Books', 'Sports', 'Collectibles', 'Other'];
+const MOCK_CATEGORIES = ['All', 'Electronics', 'Fashion', 'Home', 'Books', 'Sports', 'Collectibles', 'Other'];
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest first' },
@@ -22,6 +23,14 @@ export default function ProductListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [categories, setCategories] = useState(MOCK_CATEGORIES);
+
+  useEffect(() => {
+    if (USE_MOCK) return;
+    productsAPI.getCategories()
+      .then((items) => setCategories(['All', ...items.filter((item) => item.isActive !== false).map((item) => item.name)]))
+      .catch(() => setCategories(['All']));
+  }, []);
   const [search, setSearch] = useState(() => searchParams.get('q') || '');
   const [state, setState] = useState(() => searchParams.get('state') || '');
   const [sort, setSort] = useState('newest');
@@ -141,7 +150,7 @@ export default function ProductListPage() {
         {/* Category Pills */}
         <div className="flex w-full items-center overflow-x-auto pb-1">
           <div className="inline-flex min-w-max gap-2">
-            {CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const active = cat === activeCategory;
               return (
                 <button

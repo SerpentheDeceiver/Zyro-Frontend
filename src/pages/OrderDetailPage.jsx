@@ -90,11 +90,11 @@ export default function OrderDetailPage() {
   const [confirming, setConfirming] = useState(false);
   const [disputing, setDisputing] = useState(false);
   const [order, setOrder] = useState(null);
-  const isValidId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id ?? '');
-  const [loading, setLoading] = useState(isValidId);
+  const hasOrderId = Boolean(id);
+  const [loading, setLoading] = useState(hasOrderId);
 
   useEffect(() => {
-    if (!isValidId) return;
+    if (!hasOrderId) return;
     let cancelled = false;
 
     async function loadOrder() {
@@ -116,7 +116,7 @@ export default function OrderDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, isValidId]);
+  }, [id, hasOrderId]);
 
   if (loading) {
     return (
@@ -137,9 +137,11 @@ export default function OrderDetailPage() {
     );
   }
 
-  const escrow = getEscrowCardConfig(order.status);
-  const timeline = buildTimeline(order.status, order.createdAt);
-  const showActions = order.status === 'HELD';
+  const escrowStatus = order.escrowStatus || order.status;
+  const displayOrderNumber = order.orderNumber || order.id;
+  const escrow = getEscrowCardConfig(escrowStatus);
+  const timeline = buildTimeline(escrowStatus, order.createdAt);
+  const showActions = escrowStatus === 'HELD';
 
   async function handleConfirmReceipt() {
     setConfirming(true);
@@ -175,7 +177,7 @@ export default function OrderDetailPage() {
             Orders
           </Link>
           <ChevronRight className="h-4 w-4 text-slate-400" />
-          <span className="font-mono text-slate-600">{order.orderId}</span>
+          <span className="font-mono text-slate-600">{displayOrderNumber}</span>
         </nav>
 
         {/* Top Section */}
@@ -183,11 +185,11 @@ export default function OrderDetailPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="font-mono text-3xl font-black tracking-tight text-ink sm:text-4xl">
-                {order.orderId}
+                {displayOrderNumber}
               </h1>
               <p className="mt-2 text-slate-500">{order.productTitle}</p>
             </div>
-            <Badge size="lg" variant={order.status.toLowerCase()} pulse={order.status === 'HELD'} />
+            <Badge size="lg" variant={escrowStatus.toLowerCase()} pulse={escrowStatus === 'HELD'} />
           </div>
 
           <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
@@ -205,7 +207,7 @@ export default function OrderDetailPage() {
             </div>
             <div>
               <p className="text-sm text-slate-500">Amount</p>
-              <p className="text-2xl font-black text-primary">{formatCurrency(order.amount)}</p>
+              <p className="text-2xl font-black text-primary">{formatCurrency(order.agreedPrice ?? order.amount)}</p>
             </div>
           </div>
         </section>
@@ -245,15 +247,15 @@ export default function OrderDetailPage() {
               Raise Dispute
             </button>
           </section>
-        ) : order.status === 'RELEASED' || order.status === 'CANCELLED' ? (
+        ) : escrowStatus === 'RELEASED' || order.status === 'COMPLETED' || order.status === 'CANCELLED' ? (
           <section className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
             <Info className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
             <div>
               <p className="font-semibold text-ink">
-                {order.status === 'RELEASED' ? 'No action required' : 'No action available'}
+                {escrowStatus === 'RELEASED' ? 'No action required' : 'No action available'}
               </p>
               <p className="mt-1 text-sm text-slate-600">
-                {order.status === 'RELEASED'
+                {escrowStatus === 'RELEASED'
                   ? 'Payment has already been released to the seller.'
                   : 'This order is cancelled and can’t be changed.'}
               </p>
